@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  vet:
+    name: Vet
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.24'
+
+      - name: Run go vet
+        run: go vet ./...
+
+    test:
+      name: Test
+      runs-on: ubuntu-24.04
+      defaults:
+        run:
+          working-directory: app
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+        - name: Set up Go
+          uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+          with:
+            go-version: '1.24'
+
+        - name: Run tests with race detector
+          run: go test -race -count=1 ./...
+
+            lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Set up Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+        with:
+          go-version: '1.24'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84
+        with:
+          version: v2.5.0
+          working-directory: app
