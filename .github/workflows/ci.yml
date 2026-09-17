@@ -89,6 +89,7 @@ jobs:
         with:
           version: v2.5.0
           working-directory: app
+          skip-cache: true
 
   ci-ok:
     name: ci-ok
