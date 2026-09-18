@@ -341,10 +341,22 @@ to Caddy, plain HTTP onward to QuickNotes, HTTP/2 via ALPN:
 
 ### B.3 — Decode
 
-This environment is headless, so instead of Wireshark's GUI I used **`tshark`** — Wireshark's
-own CLI, the same dissector engine, producing the same field tree in text form.
+Opened `lab4-tls.pcap` in Wireshark; the screenshots below are the ClientHello and ServerHello
+packets with their subtrees expanded. The text excerpts alongside them are the same two packets
+through `tshark` (Wireshark's CLI, same dissector), included because the deeper fields do not
+all fit in one screen.
 
-**ClientHello** (`tshark -r lab4-tls.pcap -Y "tls.handshake.type == 1" -V`), abridged:
+**ClientHello** — display filter `tls.handshake.type == 1`, packet 4:
+
+![ClientHello in Wireshark](lab4-clienthello.png)
+
+The screenshot shows the record layer at `Version: TLS 1.0 (0x0301)`, the handshake at
+`Version: TLS 1.2 (0x0303)`, all 31 offered cipher suites with the three TLS 1.3 AEAD suites at
+the top, and `SNI=localhost` in the Info column. Wireshark flags the version field itself:
+*"This legacy_version field MUST be ignored. The supported_versions extension is present and
+MUST be…"* — the point developed at the end of this section.
+
+Same packet via `tshark -r lab4-tls.pcap -Y "tls.handshake.type == 1" -V`, abridged:
 
 ```
 TLSv1 Record Layer: Handshake Protocol: Client Hello
@@ -362,7 +374,18 @@ TLSv1 Record Layer: Handshake Protocol: Client Hello
         Extension: supported_groups: x25519, secp256r1, x448, secp521r1, secp384r1, ffdhe...
 ```
 
-**ServerHello** (`tshark ... "tls.handshake.type == 2" -V`):
+**ServerHello** — display filter `tls.handshake.type == 2`, packet 6:
+
+![ServerHello in Wireshark](lab4-serverhello.png)
+
+**Annotated — this is the screenshot that answers the question below.** Three lines in it
+matter. `Version: TLS 1.2 (0x0303)` is the legacy field, and Wireshark itself marks it
+*"MUST be ignored"*. `Cipher Suite: TLS_AES_128_GCM_SHA256 (0x1301)` is the chosen cipher. And
+`Extension: supported_versions (len=2) TLS 1.3` → `Supported Version: TLS 1.3 (0x0304)` is the
+actual version decision — the server picking one entry out of the list the client sent, which
+is the step that leaves TLS 1.0/1.1 no way in.
+
+Same packet via `tshark ... "tls.handshake.type == 2" -V`:
 
 ```
 Handshake Protocol: Server Hello
