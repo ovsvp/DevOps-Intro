@@ -14,11 +14,6 @@ Vagrant.configure("2") do |config|
     vb.memory = 1024
   end
 
-  config.vm.provider "vmware_desktop" do |v|
-    v.vmx["numvcpus"] = "2"
-    v.vmx["memsize"] = "1024"
-  end
-
   # Installs a pinned Go from the upstream tarball. Re-running `vagrant provision`
   # is a no-op once the right version is in place.
   config.vm.provision "shell", inline: <<-SHELL
