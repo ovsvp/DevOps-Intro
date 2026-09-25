@@ -95,8 +95,7 @@ quicknotes   lab6   3ef21cc04bcc   6 minutes ago   13.1MB
 | **`quicknotes:lab6` (final)** | **13.1 MB** |
 
 The builder base alone is ~20× the finished image; that whole toolchain is what multi-stage
-throws away. Of the 13.1 MB, 2.37 MB is the base and the rest is two static Go binaries
-(`quicknotes` 5.25 MB, `healthcheck` 5.24 MB) plus `seed.json` at 756 B.
+throws away.
 
 ### Config
 
@@ -112,16 +111,13 @@ $ docker inspect quicknotes:lab6 | jq '.[0].Config'
 
 Nonroot UID, port declared, entrypoint in exec form.
 
-### Runs
+### Runs (1.3)
 
 ```console
 $ docker run -d -p 18081:8080 -e DATA_PATH=/data/notes.json \
     -e SEED_PATH=/app/seed.json -v qn-test-vol:/data quicknotes:lab6
 $ curl -s http://localhost:18081/health
 {"notes":4,"status":"ok"}
-
-$ curl -s http://localhost:18081/notes | head -c 120
-[{"id":1,"title":"Welcome to QuickNotes","body":"This is the project you'll containerize...
 ```
 
 ### 1.2 — Design questions
@@ -306,14 +302,23 @@ image. The check is `test: ["CMD", "/app/healthcheck"]`, exec form, so no shell 
 Its source lives in a heredoc inside the Dockerfile rather than in `app/`, because it is
 packaging, not part of QuickNotes.
 
-Why not the alternatives the brief lists. A **sidecar** doubles the number of running
-containers and moves the health signal onto a service that is not the one being reported on —
-too much machinery for one HTTP GET. A **`:debug` image variant** puts busybox and a shell back
-into production specifically so a probe can run, which discards the property that made
-distroless worth choosing. **Relying on Docker's default** (no `HEALTHCHECK`, so a container
-counts as up whenever PID 1 is alive) fails at exactly the case worth catching: QuickNotes
-deadlocked or wedged but not exited would still report healthy. The cost of my choice is
-honest — it is 5.24 MB, 40 % of the image, to answer one HTTP request.
+Why not the alternatives the brief lists. **"A binary that's already in the image"** is not
+available: the only binary in a distroless image is the app, and QuickNotes has no health
+subcommand — so any probe means putting one there. **Relying on Docker's default** (no
+`HEALTHCHECK`, container counts as up while PID 1 lives) both contradicts Task 2.1's
+requirement to define one and fails at the case worth catching: QuickNotes deadlocked but not
+exited would still read healthy. A **sidecar** moves the health signal onto a service that is
+not the one being reported on, and doubles the running containers for one HTTP GET.
+
+The **`wget` route** deserves the longest answer, because it looks cheapest and is not. Whether
+via the `:debug` tag or by copying busybox's `wget` across, what actually lands in the image is
+busybox — a single multi-call binary that *includes `sh`*. That puts a shell back into the
+runtime, which breaks Task 1.1's "no shell" requirement and would flip bonus verification #2
+from a pass to a fail. Saving ~4 MB by reintroducing the exact thing distroless exists to
+remove is a bad trade.
+
+So the cost of my choice is 5.24 MB — 40 % of the image — to answer one HTTP request, and it
+buys a probe that tests the actual endpoint while leaving the image shell-free.
 
 **f) Why does `volumes: [quicknotes-data:/data]` survive `docker compose down`? What destroys it?**
 
@@ -407,13 +412,6 @@ the container would have failed on startup rather than silently succeeding.
 ```console
 $ docker inspect <container> --format '{{ .HostConfig.SecurityOpt }}'
 [no-new-privileges:true]
-```
-
-**Volume mount, for completeness**
-
-```console
-$ docker inspect <container> --format '{{ range .Mounts }}{{ .Type }} {{ .Name }} -> {{ .Destination }}{{ end }}'
-volume devops-intro_quicknotes-data -> /data
 ```
 
 ### B.3 — Trivy
