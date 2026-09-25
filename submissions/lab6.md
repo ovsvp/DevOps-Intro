@@ -311,11 +311,21 @@ exited would still read healthy. A **sidecar** moves the health signal onto a se
 not the one being reported on, and doubles the running containers for one HTTP GET.
 
 The **`wget` route** deserves the longest answer, because it looks cheapest and is not. Whether
-via the `:debug` tag or by copying busybox's `wget` across, what actually lands in the image is
-busybox — a single multi-call binary that *includes `sh`*. That puts a shell back into the
-runtime, which breaks Task 1.1's "no shell" requirement and would flip bonus verification #2
-from a pass to a fail. Saving ~4 MB by reintroducing the exact thing distroless exists to
-remove is a bad trade.
+via the `:debug` tag or by copying busybox's `wget` across, what lands in the image is busybox,
+and busybox is one multi-call binary reached under many names:
+
+```console
+$ docker run --rm busybox:musl ls -l /bin/sh /bin/ash /bin/wget /bin/busybox
+-rwxr-xr-x  405 root root 1378528 May 13 02:21 /bin/ash
+-rwxr-xr-x  405 root root 1378528 May 13 02:21 /bin/busybox
+-rwxr-xr-x  405 root root 1378528 May 13 02:21 /bin/sh
+-rwxr-xr-x  405 root root 1378528 May 13 02:21 /bin/wget
+```
+
+Identical size, link count 405 — `wget` *is* `sh`, the same file under another name. So
+`COPY --from=busybox /bin/wget` ships a shell whether or not that was the intent, which breaks
+Task 1.1's "no shell" requirement and flips bonus verification #2 from a pass to a fail. Saving
+~4 MB by reintroducing the exact thing distroless exists to remove is a bad trade.
 
 So the cost of my choice is 5.24 MB — 40 % of the image — to answer one HTTP request, and it
 buys a probe that tests the actual endpoint while leaving the image shell-free.
