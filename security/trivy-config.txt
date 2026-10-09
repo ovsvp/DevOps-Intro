@@ -1,0 +1,37 @@
+2026-10-09T17:32:45Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-10-09T17:32:45Z	INFO	[misconfig] Need to update the built-in checks
+2026-10-09T17:32:45Z	INFO	[misconfig] Downloading the built-in checks...
+165.46 KiB / 165.46 KiB [--------------------------------------------------------->] 100.00% ? p/s ?165.46 KiB / 165.46 KiB [-----------------------------------------------] 100.00% 2.54 MiB p/s 300ms2026-10-09T17:32:47Z	ERROR	[rego] Error occurred while parsing. Trying to fallback to embedded check	file_path="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego" err="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego:30: rego_type_error: undefined ref: input.aws.ec2.requestedamis[__local622__]\n\tinput.aws.ec2.requestedamis[__local622__]\n\t              ^\n\t              have: \"requestedamis\"\n\t              want (one of): [\"instances\" \"launchconfigurations\" \"launchtemplates\" \"networkacls\" \"securitygroups\" \"subnets\" \"volumes\" \"vpcs\"]"
+2026-10-09T17:32:47Z	ERROR	[rego] Failed to find embedded check, skipping	file_path="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego"
+2026-10-09T17:32:47Z	ERROR	[rego] Error occurred while parsing	file_path="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego" err="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego:30: rego_type_error: undefined ref: input.aws.ec2.requestedamis[__local622__]\n\tinput.aws.ec2.requestedamis[__local622__]\n\t              ^\n\t              have: \"requestedamis\"\n\t              want (one of): [\"instances\" \"launchconfigurations\" \"launchtemplates\" \"networkacls\" \"securitygroups\" \"subnets\" \"volumes\" \"vpcs\"]"
+2026-10-09T17:32:48Z	ERROR	[rego] Error occurred while parsing. Trying to fallback to embedded check	file_path="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego" err="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego:30: rego_type_error: undefined ref: input.aws.ec2.requestedamis[__local622__]\n\tinput.aws.ec2.requestedamis[__local622__]\n\t              ^\n\t              have: \"requestedamis\"\n\t              want (one of): [\"instances\" \"launchconfigurations\" \"launchtemplates\" \"networkacls\" \"securitygroups\" \"subnets\" \"volumes\" \"vpcs\"]"
+2026-10-09T17:32:48Z	ERROR	[rego] Failed to find embedded check, skipping	file_path="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego"
+2026-10-09T17:32:48Z	ERROR	[rego] Error occurred while parsing	file_path="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego" err="root/.cache/trivy/policy/content/policies/cloud/policies/aws/ec2/specify_ami_owners.rego:30: rego_type_error: undefined ref: input.aws.ec2.requestedamis[__local622__]\n\tinput.aws.ec2.requestedamis[__local622__]\n\t              ^\n\t              have: \"requestedamis\"\n\t              want (one of): [\"instances\" \"launchconfigurations\" \"launchtemplates\" \"networkacls\" \"securitygroups\" \"subnets\" \"volumes\" \"vpcs\"]"
+2026-10-09T17:32:48Z	INFO	Detected config files	num=1
+
+app/Dockerfile (dockerfile)
+===========================
+Tests: 28 (SUCCESSES: 26, FAILURES: 2)
+Failures: 2 (UNKNOWN: 0, LOW: 1, MEDIUM: 1, HIGH: 0, CRITICAL: 0)
+
+AVD-DS-0013 (MEDIUM): RUN should not be used to change directory: 'cd /hc && go mod init healthcheck >/dev/null &&     CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/healthcheck .'. Use 'WORKDIR' statement instead.
+════════════════════════════════════════
+Use WORKDIR instead of proliferating instructions like 'RUN cd … && do-something', which are hard to read, troubleshoot, and maintain.
+
+See https://avd.aquasec.com/misconfig/ds013
+────────────────────────────────────────
+ app/Dockerfile:42-43
+────────────────────────────────────────
+  42 ┌ RUN cd /hc && go mod init healthcheck >/dev/null && \
+  43 └     CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/healthcheck .
+────────────────────────────────────────
+
+
+AVD-DS-0026 (LOW): Add HEALTHCHECK instruction in your Dockerfile
+════════════════════════════════════════
+You should add HEALTHCHECK instruction in your docker container images to perform the health check on running containers.
+
+See https://avd.aquasec.com/misconfig/ds026
+────────────────────────────────────────
+
+
