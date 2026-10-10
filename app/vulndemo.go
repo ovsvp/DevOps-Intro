@@ -1,10 +1,15 @@
 package main
 
-// TEMPORARY (Lab 9 bonus B.2.5): a dependency with a known CVE, called so that
-// govulncheck's reachability analysis flags it. Reverted in the next commit.
-import jwt "github.com/dgrijalva/jwt-go"
+// TEMPORARY (Lab 9 bonus B.2.5): golang.org/x/text v0.3.0 carries GO-2021-0113
+// and language.Parse is the vulnerable symbol. Called from init() so the call
+// graph actually reaches it -- declaring it without calling it is invisible to
+// govulncheck. Reverted in the next commit.
+import "golang.org/x/text/language"
 
-func parseDemoToken(raw string) error {
-	_, err := jwt.Parse(raw, func(*jwt.Token) (interface{}, error) { return []byte("k"), nil })
-	return err
+var demoTag string
+
+func init() {
+	if t, err := language.Parse("en-US"); err == nil {
+		demoTag = t.String()
+	}
 }
