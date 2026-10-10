@@ -25,6 +25,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # github.repository keeps the owner's casing (ovsvp/DevOps-Intro), but OCI
+      # repository names must be lowercase, so the tag has to be folded first.
+      - name: Compute image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/quicknotes" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         with:
@@ -34,5 +40,5 @@ jobs:
           # arm64-only image would build fine here and fail to deploy there.
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository }}/quicknotes:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}/quicknotes:latest
+            ${{ steps.image.outputs.name }}:${{ github.ref_name }}
+            ${{ steps.image.outputs.name }}:latest
