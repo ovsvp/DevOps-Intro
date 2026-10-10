@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Least privilege: the job reads the repo and writes one package, nothing else.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Publish to ghcr.io
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4.4.0
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
+        with:
+          context: ./app
+          push: true
+          # Runners are linux/amd64, which is also what Render runs -- an
+          # arm64-only image would build fine here and fail to deploy there.
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository }}/quicknotes:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}/quicknotes:latest
