@@ -42,3 +42,14 @@ jobs:
           tags: |
             ${{ steps.image.outputs.name }}:${{ github.ref_name }}
             ${{ steps.image.outputs.name }}:latest
+
+      # Redeploys Render with the tag just pushed. imgURL must differ from the
+      # image the service was created with only in the tag, and be URL-encoded
+      # (%2F for /, %3A for :) or the hook answers 400.
+      - name: Trigger Render deploy
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+          IMAGE: ${{ steps.image.outputs.name }}:${{ github.ref_name }}
+        run: |
+          encoded=$(printf '%s' "$IMAGE" | sed 's|/|%2F|g; s|:|%3A|g')
+          curl -fsS "${HOOK}&imgURL=${encoded}" -o /dev/null -w 'render hook: HTTP %{http_code}\n'
