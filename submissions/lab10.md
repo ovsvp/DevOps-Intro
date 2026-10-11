@@ -210,6 +210,34 @@ deploy, monitor, and harden across all 10 labs.","created_at":"2026-01-15T10:00:
 No `New primary port detected … Restarting deploy` line — because `PORT=8080` and `ADDR=:8080`
 were set before the first deploy rather than discovered after it.
 
+### Deploying from CI, verified end to end
+
+Pushing a second tag exercised the whole chain — build, push, redeploy — with no manual step:
+
+```console
+$ git tag -a -s v0.1.1 -m "Lab 10: verify the deploy hook redeploys Render"
+$ git push origin v0.1.1
+```
+
+From the release run's log (<https://github.com/ovsvp/DevOps-Intro/actions/runs/38102529972>):
+
+```
+Trigger Render deploy
+  IMAGE: ghcr.io/ovsvp/devops-intro/quicknotes:v0.1.1
+render hook: HTTP 200
+```
+
+and the service answered afterwards:
+
+```console
+$ curl -s https://quicknotes-v0-1-0-zyuh.onrender.com/health
+{"notes":4,"status":"ok"}
+```
+
+The hook URL never appears in the repository — it is read from the `RENDER_DEPLOY_HOOK` Actions
+secret, and the tag is passed as a URL-encoded `imgURL` so Render pulls the version that was
+just published rather than the one the service was created with.
+
 ### 2.2 — Warm and cold latency
 
 **Warm** — five consecutive requests with the service already awake:
