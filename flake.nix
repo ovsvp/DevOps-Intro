@@ -51,10 +51,22 @@
             pathsToLink = [ "/bin" "/etc" ];
           };
 
+          # The app writes data/notes.json relative to its working directory,
+          # so nonroot needs somewhere writable. buildImage has no fakeroot
+          # hook (that is buildLayeredImage), and runAsRoot boots a VM via
+          # vmTools, which needs KVM and so cannot run inside the containers
+          # used to verify reproducibility -- hence mode bits instead of chown.
+          # 1777 is the /tmp idiom: writable by the nonroot UID, sticky.
+          extraCommands = ''
+            mkdir -p app/data
+            chmod 1777 app/data
+          '';
+
           config = {
             Entrypoint = [ "/bin/quicknotes" ];
             ExposedPorts = { "8080/tcp" = { }; };
             User = "65532:65532";
+            WorkingDir = "/app";
           };
         };
 
