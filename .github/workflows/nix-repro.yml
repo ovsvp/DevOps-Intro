@@ -1,0 +1,57 @@
+name: nix-repro
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # Two separate jobs rather than a matrix: each needs its own `outputs`, and
+  # GitHub gives every job a freshly provisioned runner, which is exactly the
+  # "two independent environments" the comparison is meant to prove.
+  build-a:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - id: build
+        run: |
+          nix build .#docker
+          echo "digest=$(sha256sum result | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+  build-b:
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+        with:
+          extra_nix_config: experimental-features = nix-command flakes
+      - id: build
+        run: |
+          nix build .#docker
+          echo "digest=$(sha256sum result | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+  compare:
+    runs-on: ubuntu-latest
+    needs: [build-a, build-b]
+    steps:
+      - name: Compare digests
+        env:
+          A: ${{ needs.build-a.outputs.digest }}
+          B: ${{ needs.build-b.outputs.digest }}
+        run: |
+          echo "build-a: $A"
+          echo "build-b: $B"
+          if [ "$A" != "$B" ]; then
+            echo "::error::image is not reproducible: digests differ"
+            exit 1
+          fi
+          echo "identical digests, image is reproducible"
