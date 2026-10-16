@@ -37,16 +37,19 @@
 
           copyToRoot = pkgs.buildEnv {
             name = "image-root";
-            paths = [ quicknotes ];
-            pathsToLink = [ "/bin" ];
+            paths = [
+              quicknotes
+              # 65532 is the same nonroot UID the Lab 6 distroless image uses.
+              # These are plain files rather than a runAsRoot script because
+              # runAsRoot boots a VM (vmTools), which needs KVM and so cannot
+              # run inside the build containers used to verify reproducibility.
+              (pkgs.writeTextDir "etc/passwd"
+                "root:x:0:0:root:/root:/sbin/nologin\nnonroot:x:65532:65532:nonroot:/home/nonroot:/sbin/nologin\n")
+              (pkgs.writeTextDir "etc/group"
+                "root:x:0:\nnonroot:x:65532:\n")
+            ];
+            pathsToLink = [ "/bin" "/etc" ];
           };
-
-          # 65532 is the same nonroot UID the Lab 6 distroless image runs as.
-          runAsRoot = ''
-            ${pkgs.dockerTools.shadowSetup}
-            groupadd -g 65532 nonroot
-            useradd -u 65532 -g 65532 -M -s /sbin/nologin nonroot
-          '';
 
           config = {
             Entrypoint = [ "/bin/quicknotes" ];
